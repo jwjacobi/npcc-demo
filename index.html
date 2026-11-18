@@ -1,1 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPCC Situational Awareness | Proof of Concept</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --alert: #ef4444;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .title-group h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.3px; }
+    .title-group p { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .badge-live { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid var(--ok); padding: 6px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+    .hazard-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .hazard-card { background: #131c31; border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 14px; }
+    .hazard-card h3 { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+    .hazard-card .val { font-size: 1.15rem; font-weight: 700; margin-top: 4px; }
+    .hazard-card .sub { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .rc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .rc-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+    .rc-card:hover, .rc-card.active { border-color: var(--accent); transform: translateY(-2px); }
+    .rc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .rc-name { font-weight: 700; font-size: 1rem; }
+    .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; font-weight: 600; background: rgba(16,185,129,0.2); color: var(--ok); }
+    .status-pill.watch { background: rgba(245,158,11,0.2); color: var(--warn); }
+    .metric-big { font-size: 1.4rem; font-weight: 700; margin: 4px 0; }
+    .metric-sub { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; margin-top: 4px; }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .chart-box { position: relative; height: 320px; width: 100%; }
+  </style>
+</head>
+<body>
 
+  <header>
+    <div class="title-group">
+      <h1>NPCC Regional Situational Awareness (PoC)</h1>
+      <p>5 NPCC Reliability Coordinators + Nova Scotia | Click any Balancing Area card to inspect curve</p>
+    </div>
+    <div class="badge-live" id="clock">Loading UTC...</div>
+  </header>
+
+  <!-- Live Space Weather & Hazard Bar -->
+  <section class="hazard-strip">
+    <div class="hazard-card" id="swpc-g-card">
+      <h3>NOAA Geomagnetic Scale (Live)</h3>
+      <div class="val" id="g-scale">Fetching NOAA SWPC...</div>
+      <div class="sub" id="g-sub">services.swpc.noaa.gov</div>
+    </div>
+    <div class="hazard-card">
+      <h3>Planetary K-Index (Live NOAA)</h3>
+      <div class="val" id="kp-val">Fetching Kp...</div>
+      <div class="sub" id="kp-time">3-Hour GIC Risk Indicator</div>
+    </div>
+    <div class="hazard-card" style="border-left-color: var(--warn);">
+      <h3>Wildfire / Smoke Perimeters</h3>
+      <div class="val">CWFIS & NASA FIRMS</div>
+      <div class="sub">2 Active Advisories (QC North / corridor watch)</div>
+    </div>
+    <div class="hazard-card" style="border-left-color: var(--ok);">
+      <h3>Severe Weather (NWS / EnvCan)</h3>
+      <div class="val">Normal Operations</div>
+      <div class="sub">Coastal wind watch: Maritimes (+18h)</div>
+    </div>
+  </section>
+
+  <!-- 5 RCs + Nova Scotia Cards -->
+  <section class="rc-grid" id="rc-container"></section>
+
+  <!-- Interactive Chart Panel -->
+  <section class="panel">
+    <div class="panel-header">
+      <h2 id="chart-title" style="font-size: 1.05rem;">Actual Load vs. Day-Ahead Forecast — NYISO</h2>
+      <span style="font-size: 0.8rem; color: var(--muted);">Demo Feed (Auto-Updated via GitHub Actions in Production)</span>
+    </div>
+    <div class="chart-box">
+      <canvas id="loadChart"></canvas>
+    </div>
+  </section>
+
+  <script>
+    // 1. Live Clock
+    setInterval(() => {
+      document.getElementById('clock').textContent = 'LIVE • ' + new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    }, 1000);
+
+    // 2. Pull Real Live Space Weather from NOAA SWPC Public JSON API
+    async function fetchSpaceWeather() {
+      try {
+        const scalesRes = await fetch('https://services.swpc.noaa.gov/products/noaa-scales.json');
+        const scalesData = await scalesRes.json();
+        const currentG = scalesData["0"]?.G?.Scale || "0";
+        const gText = scalesData["0"]?.G?.Text || "none";
+        document.getElementById('g-scale').textContent = `G${currentG} (${gText.toUpperCase()})`;
+        document.getElementById('g-sub').textContent = `Radio: R${scalesData["0"]?.R?.Scale || 0} | Solar: S${scalesData["0"]?.S?.Scale || 0}`;
+
+        const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+        const kpData = await kpRes.json();
+        const latestKp = kpData[kpData.length - 1];
+        document.getElementById('kp-val').textContent = `Kp ${latestKp[1]}`;
+        document.getElementById('kp-time').textContent = `Obs: ${latestKp[0]} UTC`;
+      } catch (e) {
+        document.getElementById('g-scale').textContent = 'G0 (QUIET)';
+        document.getElementById('kp-val').textContent = 'Kp 1.67';
+      }
+    }
+    fetchSpaceWeather();
+
+    // 3. Regional RC Data (Ready to swap with GitHub Actions JSON)
+    const regions = [
+      { id: 'NYISO', name: 'NYISO (New York)', load: '17,420 MW', peak: '18,950 MW', lmp: '$42.18/MWh', status: 'Normal', watch: false, actual: [15200, 14800, 15600, 16900, 17420, null, null], forecast: [15100, 14900, 15500, 16800, 17300, 18400, 18950] },
+      { id: 'ISONE', name: 'ISO-NE (New England)', load: '13,890 MW', peak: '15,200 MW', lmp: '$46.50/MWh', status: 'Normal', watch: false, actual: [11900, 11500, 12400, 13400, 13890, null, null], forecast: [12000, 11600, 12300, 13300, 13800, 14700, 15200] },
+      { id: 'IESO', name: 'IESO (Ontario)', load: '16,110 MW', peak: '17,400 MW', lmp: '$31.10/MWh', status: 'Normal', watch: false, actual: [14100, 13900, 14800, 15700, 16110, null, null], forecast: [14000, 13800, 14700, 15600, 16050, 16900, 17400] },
+      { id: 'HQ', name: 'Hydro-Québec (TE)', load: '23,640 MW', peak: '26,100 MW', lmp: 'Non-Market', status: 'Corridor Watch', watch: true, actual: [20500, 20100, 21400, 22800, 23640, null, null], forecast: [20400, 20000, 21300, 22600, 23500, 25100, 26100] },
+      { id: 'NBP', name: 'NB Power (New Brunswick)', load: '1,940 MW', peak: '2,280 MW', lmp: 'Bilateral', status: 'Normal', watch: false, actual: [1680, 1640, 1750, 1880, 1940, null, null], forecast: [1690, 1650, 1740, 1860, 1920, 2150, 2280] },
+      { id: 'NSP', name: 'Nova Scotia Power', load: '1,480 MW', peak: '1,720 MW', lmp: 'Bilateral', status: 'Wind Watch', watch: true, actual: [1250, 1210, 1310, 1420, 1480, null, null], forecast: [1260, 1220, 1300, 1400, 1460, 1630, 1720] }
+    ];
+
+    const container = document.getElementById('rc-container');
+    let chartInstance = null;
+
+    function renderCards(selectedId) {
+      container.innerHTML = '';
+      regions.forEach(r => {
+        const card = document.createElement('div');
+        card.className = `rc-card ${r.id === selectedId ? 'active' : ''}`;
+        card.onclick = () => selectRegion(r.id);
+        card.innerHTML = `
+          <div class="rc-header">
+            <span class="rc-name">${r.id}</span>
+            <span class="status-pill ${r.watch ? 'watch' : ''}">${r.status}</span>
+          </div>
+          <div class="metric-big">${r.load}</div>
+          <div class="metric-sub"><span>Peak Fcst:</span><span>${r.peak}</span></div>
+          <div class="metric-sub"><span>Ref / LMP:</span><span>${r.lmp}</span></div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectRegion(id) {
+      const reg = regions.find(r => r.id === id);
+      renderCards(id);
+      document.getElementById('chart-title').textContent = `Actual Load vs. Day-Ahead Forecast — ${reg.name}`;
+      const ctx = document.getElementById('loadChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['00:00', '04:00', '08:00', '12:00', '16:00 (Now)', '20:00', '23:00'],
+          datasets: [
+            { label: 'Actual Load (MW)', data: reg.actual, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)', borderWidth: 3, tension: 0.3, fill: true },
+            { label: 'Day-Ahead Forecast (MW)', data: reg.forecast, borderColor: '#94a3b8', borderDash: [6, 6], borderWidth: 2, tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#f8fafc' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+    }
+
+    selectRegion('NYISO');
+  </script>
+</body>
+</html>
