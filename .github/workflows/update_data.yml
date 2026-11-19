@@ -1,0 +1,33 @@
+name: Update NPCC Grid Data
+
+on:
+  schedule:
+    - cron: '3-59/15 * * * *'  # Runs every 15 minutes
+  workflow_dispatch:           # Lets you click a button to run it immediately
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run NPCC scraper
+        run: python scraper.py
+
+      - name: Commit and push updated JSON
+        run: |
+          git config user.name "npcc-grid-bot"
+          git config user.email "actions@github.com"
+          git add data/npcc_live.json
+          git diff --staged --quiet || git commit -m "Auto-update NPCC grid data"
+          git push
