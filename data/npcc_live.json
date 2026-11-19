@@ -1,0 +1,167 @@
+{
+  "updated_utc": "2026-11-19 00:05:33 UTC",
+  "regions": [
+    {
+      "id": "NYISO",
+      "name": "NYISO (New York)",
+      "load": "18,195 MW",
+      "peak": "Live Feed",
+      "lmp": "Live NYISO",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        18261,
+        18272,
+        18285,
+        18188,
+        18195,
+        null,
+        null
+      ],
+      "forecast": [
+        18443,
+        18454,
+        18467,
+        18369,
+        18376,
+        18595,
+        18895
+      ]
+    },
+    {
+      "id": "ISONE",
+      "name": "ISO-NE (New England)",
+      "load": "14,431 MW",
+      "peak": "Live Feed",
+      "lmp": "Live ISO-NE",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        14608,
+        14566,
+        14539,
+        14506,
+        14431,
+        null,
+        null
+      ],
+      "forecast": [
+        14754,
+        14711,
+        14684,
+        14651,
+        14575,
+        14781,
+        15031
+      ]
+    },
+    {
+      "id": "IESO",
+      "name": "IESO (Ontario)",
+      "load": "16,110 MW",
+      "peak": "17,400 MW",
+      "lmp": "$31.10/MWh",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        14100,
+        13900,
+        14800,
+        15700,
+        16110,
+        null,
+        null
+      ],
+      "forecast": [
+        14000,
+        13800,
+        14700,
+        15600,
+        16050,
+        16900,
+        17400
+      ]
+    },
+    {
+      "id": "HQ",
+      "name": "Hydro-Qu\u00e9bec (TE)",
+      "load": "22,500 MW",
+      "peak": "Open Data JSON",
+      "lmp": "Non-Market",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        21000,
+        21400,
+        21900,
+        22200,
+        22500,
+        null,
+        null
+      ],
+      "forecast": [
+        21210,
+        21614,
+        22119,
+        22422,
+        22725,
+        22500,
+        22500
+      ]
+    },
+    {
+      "id": "NBP",
+      "name": "NB Power (New Brunswick)",
+      "load": "1,940 MW",
+      "peak": "2,280 MW",
+      "lmp": "Bilateral",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        1680,
+        1640,
+        1750,
+        1880,
+        1940,
+        null,
+        null
+      ],
+      "forecast": [
+        1690,
+        1650,
+        1740,
+        1860,
+        1920,
+        2150,
+        2280
+      ]
+    },
+    {
+      "id": "NSP",
+      "name": "Nova Scotia Power",
+      "load": "1,480 MW",
+      "peak": "1,720 MW",
+      "lmp": "Bilateral",
+      "status": "Normal",
+      "watch": false,
+      "actual": [
+        1250,
+        1210,
+        1310,
+        1420,
+        1480,
+        null,
+        null
+      ],
+      "forecast": [
+        1260,
+        1220,
+        1300,
+        1400,
+        1460,
+        1630,
+        1720
+      ]
+    }
+  ]
+}
