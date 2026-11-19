@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NPCC Situational Awareness | Proof of Concept</title>
+  <title>NPCC Situational Awareness | Live Feed</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -46,7 +46,7 @@
 
   <header>
     <div class="title-group">
-      <h1>NPCC Regional Situational Awareness (PoC)</h1>
+      <h1>NPCC Regional Situational Awareness</h1>
       <p>5 NPCC Reliability Coordinators + Nova Scotia | Click any Balancing Area card to inspect curve</p>
     </div>
     <div class="badge-live" id="clock">Loading UTC...</div>
@@ -67,12 +67,12 @@
     <div class="hazard-card" style="border-left-color: var(--warn);">
       <h3>Wildfire / Smoke Perimeters</h3>
       <div class="val">CWFIS & NASA FIRMS</div>
-      <div class="sub">2 Active Advisories (QC North / corridor watch)</div>
+      <div class="sub">Module Slot Ready (Next Expansion)</div>
     </div>
     <div class="hazard-card" style="border-left-color: var(--ok);">
       <h3>Severe Weather (NWS / EnvCan)</h3>
       <div class="val">Normal Operations</div>
-      <div class="sub">Coastal wind watch: Maritimes (+18h)</div>
+      <div class="sub">Module Slot Ready (Next Expansion)</div>
     </div>
   </section>
 
@@ -82,8 +82,8 @@
   <!-- Interactive Chart Panel -->
   <section class="panel">
     <div class="panel-header">
-      <h2 id="chart-title" style="font-size: 1.05rem;">Actual Load vs. Day-Ahead Forecast — NYISO</h2>
-      <span style="font-size: 0.8rem; color: var(--muted);">Demo Feed (Auto-Updated via GitHub Actions in Production)</span>
+      <h2 id="chart-title" style="font-size: 1.05rem;">Actual Load vs. Forecast — NYISO</h2>
+      <span id="feed-status" style="font-size: 0.8rem; color: var(--accent);">Connecting to data/npcc_live.json...</span>
     </div>
     <div class="chart-box">
       <canvas id="loadChart"></canvas>
@@ -91,7 +91,7 @@
   </section>
 
   <script>
-    // 1. Live Clock
+    // 1. Live UTC Clock
     setInterval(() => {
       document.getElementById('clock').textContent = 'LIVE • ' + new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
     }, 1000);
@@ -116,26 +116,26 @@
         document.getElementById('kp-val').textContent = 'Kp 1.67';
       }
     }
-    fetchSpaceWeather();
 
-    // 3. Regional RC Data (Ready to swap with GitHub Actions JSON)
-    const regions = [
-      { id: 'NYISO', name: 'NYISO (New York)', load: '17,420 MW', peak: '18,950 MW', lmp: '$42.18/MWh', status: 'Normal', watch: false, actual: [15200, 14800, 15600, 16900, 17420, null, null], forecast: [15100, 14900, 15500, 16800, 17300, 18400, 18950] },
-      { id: 'ISONE', name: 'ISO-NE (New England)', load: '13,890 MW', peak: '15,200 MW', lmp: '$46.50/MWh', status: 'Normal', watch: false, actual: [11900, 11500, 12400, 13400, 13890, null, null], forecast: [12000, 11600, 12300, 13300, 13800, 14700, 15200] },
-      { id: 'IESO', name: 'IESO (Ontario)', load: '16,110 MW', peak: '17,400 MW', lmp: '$31.10/MWh', status: 'Normal', watch: false, actual: [14100, 13900, 14800, 15700, 16110, null, null], forecast: [14000, 13800, 14700, 15600, 16050, 16900, 17400] },
-      { id: 'HQ', name: 'Hydro-Québec (TE)', load: '23,640 MW', peak: '26,100 MW', lmp: 'Non-Market', status: 'Corridor Watch', watch: true, actual: [20500, 20100, 21400, 22800, 23640, null, null], forecast: [20400, 20000, 21300, 22600, 23500, 25100, 26100] },
-      { id: 'NBP', name: 'NB Power (New Brunswick)', load: '1,940 MW', peak: '2,280 MW', lmp: 'Bilateral', status: 'Normal', watch: false, actual: [1680, 1640, 1750, 1880, 1940, null, null], forecast: [1690, 1650, 1740, 1860, 1920, 2150, 2280] },
-      { id: 'NSP', name: 'Nova Scotia Power', load: '1,480 MW', peak: '1,720 MW', lmp: 'Bilateral', status: 'Wind Watch', watch: true, actual: [1250, 1210, 1310, 1420, 1480, null, null], forecast: [1260, 1220, 1300, 1400, 1460, 1630, 1720] }
+    // 3. Fallback Region Data (Replaced automatically by data/npcc_live.json)
+    let regions = [
+      { id: 'NYISO', name: 'NYISO (New York)', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] },
+      { id: 'ISONE', name: 'ISO-NE (New England)', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] },
+      { id: 'IESO', name: 'IESO (Ontario)', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] },
+      { id: 'HQ', name: 'Hydro-Québec (TE)', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] },
+      { id: 'NBP', name: 'NB Power (New Brunswick)', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] },
+      { id: 'NSP', name: 'Nova Scotia Power', load: 'Loading...', peak: '--', lmp: '--', status: 'Syncing', watch: false, actual: [0,0,0,0,0,null,null], forecast: [0,0,0,0,0,0,0] }
     ];
 
+    let selectedRegionId = 'NYISO';
     const container = document.getElementById('rc-container');
     let chartInstance = null;
 
-    function renderCards(selectedId) {
+    function renderCards(activeId) {
       container.innerHTML = '';
       regions.forEach(r => {
         const card = document.createElement('div');
-        card.className = `rc-card ${r.id === selectedId ? 'active' : ''}`;
+        card.className = `rc-card ${r.id === activeId ? 'active' : ''}`;
         card.onclick = () => selectRegion(r.id);
         card.innerHTML = `
           <div class="rc-header">
@@ -143,7 +143,7 @@
             <span class="status-pill ${r.watch ? 'watch' : ''}">${r.status}</span>
           </div>
           <div class="metric-big">${r.load}</div>
-          <div class="metric-sub"><span>Peak Fcst:</span><span>${r.peak}</span></div>
+          <div class="metric-sub"><span>Feed Source:</span><span>${r.peak}</span></div>
           <div class="metric-sub"><span>Ref / LMP:</span><span>${r.lmp}</span></div>
         `;
         container.appendChild(card);
@@ -151,18 +151,19 @@
     }
 
     function selectRegion(id) {
-      const reg = regions.find(r => r.id === id);
-      renderCards(id);
-      document.getElementById('chart-title').textContent = `Actual Load vs. Day-Ahead Forecast — ${reg.name}`;
+      selectedRegionId = id;
+      const reg = regions.find(r => r.id === id) || regions[0];
+      renderCards(reg.id);
+      document.getElementById('chart-title').textContent = `Recent Load Trajectory — ${reg.name}`;
       const ctx = document.getElementById('loadChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['00:00', '04:00', '08:00', '12:00', '16:00 (Now)', '20:00', '23:00'],
+          labels: ['T-4', 'T-3', 'T-2', 'T-1', 'Latest', 'Fcst +1', 'Fcst +2'],
           datasets: [
             { label: 'Actual Load (MW)', data: reg.actual, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.15)', borderWidth: 3, tension: 0.3, fill: true },
-            { label: 'Day-Ahead Forecast (MW)', data: reg.forecast, borderColor: '#94a3b8', borderDash: [6, 6], borderWidth: 2, tension: 0.3 }
+            { label: 'Projected Trend (MW)', data: reg.forecast, borderColor: '#94a3b8', borderDash: [6, 6], borderWidth: 2, tension: 0.3 }
           ]
         },
         options: {
@@ -177,7 +178,32 @@
       });
     }
 
-    selectRegion('NYISO');
+    // 4. Load Live JSON Generated by GitHub Actions
+    async function loadGridData() {
+      try {
+        const res = await fetch(`./data/npcc_live.json?t=${Date.now()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+        if (payload.regions && payload.regions.length > 0) {
+          regions = payload.regions;
+          document.getElementById('feed-status').textContent = `GitHub Actions Feed • Last Sync: ${payload.updated_utc}`;
+          document.getElementById('feed-status').style.color = 'var(--ok)';
+          selectRegion(selectedRegionId);
+        }
+      } catch (err) {
+        document.getElementById('feed-status').textContent = `Waiting for GitHub Pages sync (${err.message})`;
+        document.getElementById('feed-status').style.color = 'var(--warn)';
+      }
+    }
+
+    // Initial load + auto-refresh every 5 minutes
+    selectRegion(selectedRegionId);
+    fetchSpaceWeather();
+    loadGridData();
+    setInterval(() => {
+      fetchSpaceWeather();
+      loadGridData();
+    }, 300000);
   </script>
 </body>
 </html>
