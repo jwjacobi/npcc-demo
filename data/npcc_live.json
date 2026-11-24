@@ -1,58 +1,58 @@
 {
-  "updated_utc": "2026-11-24 01:14:17 UTC",
+  "updated_utc": "2026-11-24 11:00:29 UTC",
   "regions": [
     {
       "id": "NYISO",
       "name": "NYISO (New York)",
-      "load": "17,629 MW",
+      "load": "14,738 MW",
       "peak": "Live Feed",
       "lmp": "Live NYISO",
       "status": "Normal",
       "watch": false,
       "actual": [
-        17717,
-        17733,
-        17672,
-        17677,
-        17629,
+        14347,
+        14373,
+        14572,
+        14628,
+        14738,
         null,
         null
       ],
       "forecast": [
-        17894,
-        17910,
-        17848,
-        17853,
-        17805,
-        18029,
-        18329
+        14490,
+        14516,
+        14717,
+        14774,
+        14885,
+        15138,
+        15438
       ]
     },
     {
       "id": "ISONE",
       "name": "ISO-NE (New England)",
-      "load": "13,619 MW",
+      "load": "11,985 MW",
       "peak": "Live Feed",
       "lmp": "Live ISO-NE",
       "status": "Normal",
       "watch": false,
       "actual": [
-        13843,
-        13798,
-        13751,
-        13687,
-        13619,
+        11514,
+        11651,
+        11727,
+        11838,
+        11985,
         null,
         null
       ],
       "forecast": [
-        13981,
-        13935,
-        13888,
-        13823,
-        13755,
-        13969,
-        14219
+        11629,
+        11767,
+        11844,
+        11956,
+        12104,
+        12335,
+        12585
       ]
     },
     {
